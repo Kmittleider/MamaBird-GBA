@@ -5,8 +5,6 @@
 // defines gravity strength and player fly strength
 #define GRAVITY -32         // acceleration due to gravity (y = xo + x*v - a^2)
 #define GRAVITYFACTOR 0.05   // strength of gravity
-#define FLYVELOCITY 1     // player initial fly velocity on keypress
-#define FLYHOLDVELOCITY 0.5  // additive velocity as player holds down fly
 
 //defines bounds for cat, worm, and fish movement
 #define CATBOUNDRIGHT 247
@@ -51,6 +49,12 @@ int hOff;
 int vOff;
 int level;
 
+//Mamabird, babybird cat animation states for aniState
+enum {MBRIGHT, MBLEFT, MBIDLE};
+enum {BCRIGHT, BCLEFT};
+enum {YCRIGHT, YCLEFT};
+enum {FISHRIGHT, FISHLEFT};
+
 //Initialize level 1
 void initGame() {
     initPlayer();
@@ -75,6 +79,10 @@ void initGame() {
 void updateGame() {
     updatePlayer();
     updateFallingObjects();
+    for (int i = 0; i < 4; i++)
+        updateBabyBirds(&babyBird[i]);
+    for (int i = 0; i < 4; i++)
+        updateBabyCardinals(&babyCardnial[i]);
     updateCat();
     updateFish();
     updateWorms();
@@ -84,6 +92,10 @@ void updateLevel3() {
     updatePlayer();
     updateFallingObjects();
     updateCat();
+    for (int i = 0; i < 4; i++)
+        updateBabyBirds(&babyBird[i]);
+    for (int i = 0; i < 4; i++)
+        updateBabyCardinals(&babyCardnial[i]);
     updateCat2();
     updateFish();
     updateWorms();
@@ -201,7 +213,7 @@ void drawLevel3() {
     REG_BG1VOFF = vOff;
 }
 
-//Initialize the player
+//Initialize mamaBird
 void initPlayer() {
     mamaBird.width = 16;
     mamaBird.height = 16;
@@ -213,8 +225,8 @@ void initPlayer() {
     mamaBird.col = 192;
     mamaBird.aniCounter = 0;
     mamaBird.curFrame = 0;
-    mamaBird.numFrames = 1;
-    //mamaBird.aniState = 
+    mamaBird.numFrames = 4;
+    mamaBird.aniState = MBLEFT;
 }
 
 //Handle every-frame action of the player
@@ -256,6 +268,8 @@ void updatePlayer() {
                 hOff++;
         }
     }
+
+    animateMamaBird();
 
     if (collision(mamaBird.col, mamaBird.row, mamaBird.width - 4, mamaBird.height - 4, 
         cat.col, cat.row, cat.width, cat.height) || collision(mamaBird.col, mamaBird.row, 
@@ -304,11 +318,13 @@ void updatePlayer() {
     if (collision(mamaBird.col, mamaBird.row, mamaBird.width - 4, mamaBird.height - 4, 
         190, 78, 20, 4) && collectedWorm > 0 && blueBirdsFed <= 3 && birdsFed < 3) {
             collectedWorm--;
+            babyBird[blueBirdsFed].isFed = 1;
             birdsFed++;
             blueBirdsFed++;
     } else if (collision(mamaBird.col, mamaBird.row, mamaBird.width-4, mamaBird.height - 4,
         231, 76, 15, 5) && collectedWorm > 0 && cardinalsFed <= 3 && birdsFed >= 3) {
             collectedWorm--;
+            babyCardnial[cardinalsFed].isFed = 1;
             birdsFed++;
             cardinalsFed++;
         }
@@ -324,21 +340,43 @@ void updatePlayer() {
         collectedFish--;
         dropFallingObjects(2);
     }
+
+    if (BUTTON_PRESSED(BUTTON_DOWN) && collectedYarn < 10)
+        collectedYarn += 10;
 }
 
 //Handle player animation states
-void animatePlayer() {
+void animateMamaBird() {
+    mamaBird.prevAniState = mamaBird.aniState;
+    mamaBird.aniState = MBIDLE;
 
+    //Change the animation frame every 7 frames of gameplay
+    if (mamaBird.aniCounter % 7 == 0)
+        mamaBird.curFrame = (mamaBird.curFrame + 1) % mamaBird.numFrames;
+
+    if (BUTTON_HELD(BUTTON_LEFT) || BUTTON_HELD(BUTTON_UP))
+        mamaBird.aniState = MBLEFT;
+    if (BUTTON_HELD(BUTTON_RIGHT))
+        mamaBird.aniState = MBRIGHT;
+    //may need to add just button up
+
+    //if mamaBird is idle, frame is mamabird still
+    if (mamaBird.aniState == MBIDLE) {
+        mamaBird.curFrame = 0;
+        mamaBird.aniCounter = 0;
+        mamaBird.aniState = mamaBird.prevAniState;
+    } else
+        mamaBird.aniCounter++;
 }
 
-//Draw the player
+//Draw Mama bird
 void drawPlayer() {
     if (mamaBird.hide) {
         shadowOAM[0].attr0 |= ATTR0_HIDE;
     } else {
         shadowOAM[0].attr0 = (ROWMASK & (mamaBird.row - vOff)) | ATTR0_SQUARE | ATTR0_REGULAR;
-        shadowOAM[0].attr1 = (COLMASK & (mamaBird.col - hOff)) | ATTR1_TINY;
-        shadowOAM[0].attr2 = ATTR2_PALROW(0) | ATTR2_TILEID(0, 0);
+        shadowOAM[0].attr1 = (COLMASK & (mamaBird.col - hOff)) | ATTR1_SMALL;
+        shadowOAM[0].attr2 = ATTR2_PALROW(0) | ATTR2_TILEID(mamaBird.aniState * 2, mamaBird.curFrame * 2);
     }
 }
 
@@ -406,9 +444,9 @@ void drawFallingObjects() {
             if (fallingObj[i].flag == 1) {
                 shadowOAM[i + 20].attr0 = (ROWMASK & (fallingObj[i].row - vOff)) | ATTR0_SQUARE | ATTR0_REGULAR;
                 shadowOAM[i + 20].attr1 = (COLMASK & (fallingObj[i].col - hOff)) | ATTR1_TINY;
-                shadowOAM[i + 20].attr2 = ATTR2_PALROW(0) | ATTR2_TILEID(8, 0);
+                shadowOAM[i + 20].attr2 = ATTR2_PALROW(0) | ATTR2_TILEID(9, 1);
             } else {
-                shadowOAM[i + 20].attr0 = (ROWMASK & (fallingObj[i].row - vOff)) | ATTR0_SQUARE | ATTR0_REGULAR;
+                shadowOAM[i + 20].attr0 = (ROWMASK & (fallingObj[i].row - vOff)) | ATTR0_WIDE | ATTR0_REGULAR;
                 shadowOAM[i + 20].attr1 = (COLMASK & (fallingObj[i].col - hOff)) | ATTR1_TINY;
                 shadowOAM[i + 20].attr2 = ATTR2_PALROW(0) | ATTR2_TILEID(10, 0);
             }
@@ -422,14 +460,14 @@ void initCat() {
     cat.col = 95;
     cat.rdel = 0;
     cat.cdel = -1;
-    cat.width = 24;
-    cat.height = 16;
+    cat.width = 23;
+    cat.height = 12;
     cat.aniCounter = 0;
     cat.prevAniState = 0;
     cat.curFrame = 0;
-    cat.numFrames = 1;
+    cat.numFrames = 3;
     distractionTime = 0;
-    //cat.aniState = 
+    cat.aniState = BCLEFT;
 }
 
 //Handle every-frame action of the cat
@@ -440,18 +478,30 @@ void updateCat() {
     } else {
         //move cat
         cat.col += cat.cdel;
-        if (cat.col == CATBOUNDLEFT) //right
+        if (cat.col == CATBOUNDLEFT) { //right
+            cat.aniState = BCRIGHT;
             cat.cdel = 1;
-        if (cat.col == CATBOUNDRIGHT) //left
+        }
+
+        if (cat.col == CATBOUNDRIGHT) {//left
+            cat.aniState = BCLEFT;
             cat.cdel = -1;
-    } 
+        }
+
+        cat.aniCounter++;
+        if (cat.aniCounter % 7 == 0) {
+            cat.curFrame++;
+            if (cat.curFrame == cat.numFrames)
+                cat.curFrame = 0;
+        }
+    }
 }
 
 //Draw Cat
 void drawCat() {
-    shadowOAM[1].attr0 = (ROWMASK & (cat.row - vOff)) | ATTR0_SQUARE | ATTR0_REGULAR;
-    shadowOAM[1].attr1 = (COLMASK & (cat.col - hOff)) | ATTR1_SMALL;
-    shadowOAM[1].attr2 = ATTR2_PALROW(0) | ATTR2_TILEID(2, cat.curFrame);
+    shadowOAM[1].attr0 = (ROWMASK & (cat.row - vOff)) | ATTR0_WIDE | ATTR0_REGULAR;
+    shadowOAM[1].attr1 = (COLMASK & (cat.col - hOff)) | ATTR1_MEDIUM;
+    shadowOAM[1].attr2 = ATTR2_PALROW(0) | ATTR2_TILEID(cat.aniState * 3, 8 + cat.curFrame * 2);
 }
 
 void initCat2() {
@@ -464,9 +514,9 @@ void initCat2() {
     cat2.aniCounter = 0;
     cat2.prevAniState = 0;
     cat2.curFrame = 0;
-    cat2.numFrames = 1;
+    cat2.numFrames = 3;
     distractionTime = 0;
-    //cat.aniState = 
+    cat2.aniState = YCLEFT;
 }
 
 void updateCat2() {
@@ -475,17 +525,29 @@ void updateCat2() {
     } else {
         //move cat
         cat2.col += cat2.cdel;
-        if (cat2.col == CATBOUNDLEFT) //right
+        if (cat2.col == CATBOUNDLEFT) { //right
+            cat2.aniState = YCRIGHT;
             cat2.cdel = 1;
-        if (cat2.col == CATBOUNDRIGHT) //left
+        }
+
+        if (cat2.col == CATBOUNDRIGHT) { //left
+            cat2.aniState = YCLEFT;
             cat2.cdel = -1;
+        }
+
+        cat2.aniCounter++;
+        if (cat2.aniCounter % 7 == 0) {
+            cat2.curFrame++;
+            if (cat2.curFrame == cat2.numFrames)
+                cat2.curFrame = 0;
+        }
     } 
 }
 
 void drawCat2() {
-    shadowOAM[19].attr0 = (ROWMASK & (cat2.row - vOff)) | ATTR0_SQUARE | ATTR0_REGULAR;
-    shadowOAM[19].attr1 = (COLMASK & (cat2.col - hOff)) | ATTR1_SMALL;
-    shadowOAM[19].attr2 = ATTR2_PALROW(0) | ATTR2_TILEID(2, 3 + cat2.curFrame);
+    shadowOAM[19].attr0 = (ROWMASK & (cat2.row - vOff)) | ATTR0_WIDE | ATTR0_REGULAR;
+    shadowOAM[19].attr1 = (COLMASK & (cat2.col - hOff)) | ATTR1_MEDIUM;
+    shadowOAM[19].attr2 = ATTR2_PALROW(0) | ATTR2_TILEID(cat2.aniState * 3, 14 + cat2.curFrame * 2);
 }
 
 //Initialize the fish
@@ -494,46 +556,66 @@ void initFish() {
     fish.col = 352;
     fish.rdel = 0;
     fish.cdel = -1;
-    fish.width = 16;
-    fish.height = 8;
-    fish.aniCounter = 0;
-    //fish.prevAniState = 0;
-    fish.curFrame = 0;
-    fish.numFrames = 1;
-    //fish.aniState =
+    fish.width = 10;
+    fish.height = 6;
+    fish.swimLeft = 0;
+    fish.aniState = 0;
 }
 
 //Handle every-frame action of the fish
 void updateFish() {
     //move fish
     fish.col += fish.cdel;
-    if (fish.col == FISHBOUNDLEFT) //right
+    if (fish.col == FISHBOUNDLEFT) { //right
         fish.cdel = 1;
-    if (fish.col == FISHBOUNDRIGHT) //left
+        fish.aniState = FISHRIGHT;
+        fish.swimLeft = 0;
+    }
+    if (fish.col == FISHBOUNDRIGHT)  { //left
         fish.cdel = -1;
+        fish.aniState = FISHLEFT;
+        fish.swimLeft = 1;
+    }
 }
 
 //Draw fish
 void drawFish() {
-    shadowOAM[2].attr0 = (ROWMASK & (fish.row - vOff)) | ATTR0_SQUARE | ATTR0_REGULAR;
+    shadowOAM[2].attr0 = (ROWMASK & (fish.row - vOff)) | ATTR0_WIDE | ATTR0_REGULAR;
     shadowOAM[2].attr1 = (COLMASK & (fish.col - hOff)) | ATTR1_TINY;
-    shadowOAM[2].attr2 = ATTR2_PALROW(0) | ATTR2_TILEID(10, fish.curFrame);
+    if (fish.swimLeft == 0) //right
+        shadowOAM[2].attr2 = ATTR2_PALROW(0) | ATTR2_TILEID(8 + fish.aniState * 2, 0);
+    else //left
+        shadowOAM[2].attr2 = ATTR2_PALROW(0) | ATTR2_TILEID(8 + fish.aniState * 2, 0);
 }
 
 //Initialize the baby birds
 void initBabyBirds() {
     for (int i = 0; i < 3; i++) {
-        babyBird[i].row = 78;
-        babyBird[i].col = 196 + (i * 5);
-        babyBird[i].rdel = 1;
-        babyBird[i].cdel = 1;
-        babyBird[i].width = 8;
-        babyBird[i].height = 8;
-        babyBird[i].aniCounter = 0;
-        babyBird[i].prevAniState = 0;
-        babyBird[i].curFrame = 0;
-        babyBird[i].numFrames = 1;
-        //babyBird[i].aniState =
+        if (i < 2) {
+            babyBird[i].row = 74;
+            babyBird[i].col = 195 + (i * 5);
+            babyBird[i].rdel = 1;
+            babyBird[i].cdel = 1;
+            babyBird[i].width = 7;
+            babyBird[i].height = 7;
+            babyBird[i].aniCounter = 0;
+            babyBird[i].prevAniState = 0;
+            babyBird[i].curFrame = 0;
+            babyBird[i].isFed = 0;
+            babyBird[i].numFrames = 2;
+        } else {
+            babyBird[i].row = 71;
+            babyBird[i].col = 198;
+            babyBird[i].rdel = 1;
+            babyBird[i].cdel = 1;
+            babyBird[i].width = 7;
+            babyBird[i].height = 7;
+            babyBird[i].aniCounter = 0;
+            babyBird[i].prevAniState = 0;
+            babyBird[i].curFrame = 0;
+            babyBird[i].isFed = 0;
+            babyBird[i].numFrames = 2;
+        }
     }
 }
 
@@ -542,24 +624,53 @@ void drawBabyBirds() {
     for (int i = 0; i < 3; i++) {
         shadowOAM[3 + i].attr0 = (ROWMASK & (babyBird[i].row - vOff)) | ATTR0_SQUARE | ATTR0_REGULAR;
         shadowOAM[3 + i].attr1 = (COLMASK & (babyBird[i].col - hOff)) | ATTR1_TINY;
-        shadowOAM[3 + i].attr2 = ATTR2_PALROW(0) | ATTR2_TILEID(5, babyBird[i].curFrame);
+        
+        //if babyBird fed
+        if (babyBird[i].isFed == 1)
+            shadowOAM[3 + i].attr2 = ATTR2_PALROW(0) | ATTR2_TILEID(7, 0);
+        //if not collided, babyBird still hungry
+        else 
+            shadowOAM[3 + i].attr2 = ATTR2_PALROW(0) | ATTR2_TILEID(5 + babyBird[i].curFrame, 0);
+    }
+}
+
+void updateBabyBirds(BABYBIRD* babyBird) {
+    babyBird->aniCounter++;
+    if (babyBird->aniCounter % 10 == 0) {
+        babyBird->curFrame++;
+        if (babyBird->curFrame == babyBird->numFrames)
+            babyBird->curFrame = 0;
     }
 }
 
 //initialize the baby cardinals
 void initBabyCardinals() {
     for (int i = 0; i < 3; i++) {
-        babyCardnial[i].row = 78;
-        babyCardnial[i].col = 233 + (i * 6);
-        babyCardnial[i].rdel = 1;
-        babyCardnial[i].cdel = 1;
-        babyCardnial[i].width = 8;
-        babyCardnial[i].height = 8;
-        babyCardnial[i].aniCounter = 0;
-        babyCardnial[i].prevAniState = 0;
-        babyCardnial[i].curFrame = 0;
-        babyCardnial[i].numFrames = 1;
-        //babyCardnial[i].aniState =
+        if (i < 2) {
+            babyCardnial[i].row = 74;
+            babyCardnial[i].col = 231 + (i * 6);
+            babyCardnial[i].rdel = 1;
+            babyCardnial[i].cdel = 1;
+            babyCardnial[i].width = 7;
+            babyCardnial[i].height = 7;
+            babyCardnial[i].aniCounter = 0;
+            babyCardnial[i].prevAniState = 0;
+            babyCardnial[i].curFrame = 0;
+            babyCardnial[i].numFrames = 2;
+            babyCardnial[i].isFed = 0;
+        } else {
+            babyCardnial[i].row = 71;
+            babyCardnial[i].col = 234;
+            babyCardnial[i].rdel = 1;
+            babyCardnial[i].cdel = 1;
+            babyCardnial[i].width = 7;
+            babyCardnial[i].height = 7;
+            babyCardnial[i].aniCounter = 0;
+            babyCardnial[i].prevAniState = 0;
+            babyCardnial[i].curFrame = 0;
+            babyCardnial[i].numFrames = 2;
+            babyCardnial[i].isFed = 0;
+        }
     }
 }
 
@@ -568,7 +679,22 @@ void drawBabyCardinals() {
     for (int i = 0; i < 3; i++) {
         shadowOAM[16 + i].attr0 = (ROWMASK & (babyCardnial[i].row - vOff)) | ATTR0_SQUARE | ATTR0_REGULAR;
         shadowOAM[16 + i].attr1 = (COLMASK & (babyCardnial[i].col - hOff)) | ATTR1_TINY;
-        shadowOAM[16 + i].attr2 = ATTR2_PALROW(0) | ATTR2_TILEID(5, 1 + babyCardnial[i].curFrame);
+        
+        //if babyCardinal fed
+        if (babyCardnial[i].isFed == 1)
+            shadowOAM[16 + i].attr2 = ATTR2_PALROW(0) | ATTR2_TILEID(7, 3);
+        //if not collided, babyBird still hungry
+        else 
+            shadowOAM[16 + i].attr2 = ATTR2_PALROW(0) | ATTR2_TILEID(5 + babyCardnial[i].curFrame, 3);
+    }
+}
+
+void updateBabyCardinals(BABYCARDINAL* babyCardnial) {
+    babyCardnial->aniCounter++;
+    if (babyCardnial->aniCounter % 10 == 0) {
+        babyCardnial->curFrame++;
+        if (babyCardnial->curFrame == babyCardnial->numFrames)
+            babyCardnial->curFrame = 0;
     }
 }
 
@@ -578,11 +704,8 @@ void initWorms() {
     worm.col = 58;
     worm.rdel = 1;
     worm.cdel = 1;
-    worm.width = 8;
+    worm.width = 3;
     worm.height = 8;
-    worm.curFrame = 0;
-    worm.numFrames = 1;
-    //worm.aniState =
 }
 
 //Handle every-frame action of the worms
@@ -602,29 +725,26 @@ void updateWorms() {
 void drawWorms() {
     shadowOAM[6].attr0 = (ROWMASK & (worm.row - vOff)) | ATTR0_SQUARE | ATTR0_REGULAR;
     shadowOAM[6].attr1 = (COLMASK & (worm.col - hOff)) | ATTR1_TINY;
-    shadowOAM[6].attr2 = ATTR2_PALROW(0) | ATTR2_TILEID(9, worm.curFrame);
+    if (collectedWorm == 0)
+        shadowOAM[6].attr2 = ATTR2_PALROW(0) | ATTR2_TILEID(10, 1);
+    else
+        shadowOAM[6].attr2 = ATTR2_PALROW(0) | ATTR2_TILEID(11, 1);
 }
 
 //initalize 
 void initYarn() {
     yarn.row = 135;
     yarn.col = 27;
-    yarn.width = 8;
-    yarn.height = 8;
-    yarn.curFrame = 0;
-    yarn.numFrames = 1;
+    yarn.width = 4;
+    yarn.height = 4;
 }
 
-//update every-frame action of the yarn
-void updateYarn() {
-
-}
 
 //draws yarn
 void drawYarn() {
     shadowOAM[7].attr0 = (ROWMASK & (yarn.row - vOff)) | ATTR0_SQUARE | ATTR0_REGULAR;
     shadowOAM[7].attr1 = (COLMASK & (yarn.col - hOff)) | ATTR1_TINY;
-    shadowOAM[7].attr2 = ATTR2_PALROW(0) | ATTR2_TILEID(8, worm.curFrame);
+    shadowOAM[7].attr2 = ATTR2_PALROW(0) | ATTR2_TILEID(9, 1);
 }
 
 void initFishText() {

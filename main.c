@@ -1,11 +1,11 @@
-/* Everything related to the basic game play is finished except for the artwork, audio, cheat and parallax 
-background. To make the game more user friendly, I want to make the worm disappear when picked up by Mama Bird,
-have transition screens between the levels for smoother game play, and other similar things to make the
-game more authentic and playable. Game mechanics/how to play can be found in the instructions. In level
-one, there is only 1 cat and 3 baby birds to feed. Feed all 3 without hitting the cat and you move on to 
-level 2. Level 2 still has only 1 cat to avoid, but you now have to feed double the amount of baby birds.
-Feed all 6 and you move on to level 3. Level three now has 2 cats and 6 hungry baby birds. Feed them all
-and you win! If at any point you get hit by any of the cats, the game is lost. */
+/* Finished basic artwork and animations although I want to polish the cat walking animation and make the background and
+state screens more pleasant. I also implemented a cheat (push the down button to receive 10 yarn, but can only receive
+when total yarnballs is below 10. Figred out how to make the worm disappear when collected and gone until the player feeds
+the baby birds and I rearranged the baby birds so they better fit in the nest. Still want to implement the transition 
+screens between levels but didn't have time to get around to it.
+
+Still need to input sound and parallax background 
+Again, game mechanics/how to play can be found in the instructions. */
 
 #include <stdlib.h>
 #include <stdio.h>

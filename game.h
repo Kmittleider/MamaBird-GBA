@@ -41,7 +41,6 @@ void updateFish();
 void drawFish();
 void fishCollisionCheck();
 void initYarn();
-void updateYarn();
 void drawYarn();
 void yarnCollisionCheck();
 void initFishText();
@@ -109,6 +108,7 @@ typedef struct {
     int prevAniState;
     int curFrame;
     int numFrames;
+    int isFed;
 } BABYBIRD;
 
 typedef struct {
@@ -123,6 +123,7 @@ typedef struct {
     int prevAniState;
     int curFrame;
     int numFrames;
+    int isFed;
 } BABYCARDINAL;
 
 //struct for fish
@@ -135,9 +136,7 @@ typedef struct {
     int height;
     int aniCounter;
     int aniState;
-    int prevAniState;
-    int curFrame;
-    int numFrames;
+    int swimLeft;
     int visibleFrames;
     int isColliding;
 } FISH;
