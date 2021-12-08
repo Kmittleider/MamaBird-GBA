@@ -3,13 +3,13 @@
 
 //======================================================================
 //
-//	level2Background, 512x256@4, 
+//	level2Background, 512x256@8, 
 //	+ palette 256 entries, not compressed
-//	+ 71 tiles (t|f|p reduced) not compressed
+//	+ 552 tiles (t|f|p reduced) not compressed
 //	+ regular map (in SBBs), not compressed, 64x32 
-//	Total size: 512 + 2272 + 4096 = 6880
+//	Total size: 512 + 35328 + 4096 = 39936
 //
-//	Time-stamp: 2021-11-25, 14:29:48
+//	Time-stamp: 2021-12-07, 23:17:54
 //	Exported by Cearn's GBA Image Transmogrifier, v0.8.3
 //	( http://www.coranac.com/projects/#grit )
 //
@@ -18,8 +18,8 @@
 #ifndef GRIT_LEVEL2BACKGROUND_H
 #define GRIT_LEVEL2BACKGROUND_H
 
-#define level2BackgroundTilesLen 2272
-extern const unsigned short level2BackgroundTiles[1136];
+#define level2BackgroundTilesLen 35328
+extern const unsigned short level2BackgroundTiles[17664];
 
 #define level2BackgroundMapLen 4096
 extern const unsigned short level2BackgroundMap[2048];

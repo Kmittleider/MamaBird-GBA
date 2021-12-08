@@ -1,6 +1,10 @@
 #include "myLib.h"
 #include "game.h"
 #include "spritesheet.h"
+#include "gameSong.h"
+#include "meow.h"
+#include "quickChirp.h"
+#include "purr.h"
 
 // defines gravity strength and player fly strength
 #define GRAVITY -32         // acceleration due to gravity (y = xo + x*v - a^2)
@@ -40,7 +44,8 @@ int cardinalsFed = 0;
 int collectedYarn = 0;
 int collectedFish = 0;
 int collectedWorm = 0;
-int distractionTime = 0;
+int catDistractionTime = 0;
+int cat2DistractionTime = 0;
 int babyCollide;
 int randCol;
 int wormDisplay;
@@ -286,6 +291,7 @@ void updatePlayer() {
             if (yarn.isColliding == 0 && BUTTON_PRESSED(BUTTON_B)) {
                 collectedYarn += 1;
                 yarn.isColliding = 1;
+                playSoundB(quickChirp_data, quickChirp_length, 0);
             }
     } else {
         yarn.isColliding = 0;
@@ -297,6 +303,7 @@ void updatePlayer() {
             if (fish.isColliding == 0 && BUTTON_PRESSED(BUTTON_B)) {
                 collectedFish += 1;
                 fish.isColliding = 1;
+                playSoundB(quickChirp_data, quickChirp_length, 0);
             }
     } else {
         fish.isColliding = 0;
@@ -308,6 +315,7 @@ void updatePlayer() {
             if (worm.isColliding == 0  && BUTTON_PRESSED(BUTTON_B)) {
                 collectedWorm = 1;
                 worm.isColliding = 1;
+                playSoundB(quickChirp_data, quickChirp_length, 0);
             }
     } else {
         worm.isColliding = 0;
@@ -321,12 +329,14 @@ void updatePlayer() {
             babyBird[blueBirdsFed].isFed = 1;
             birdsFed++;
             blueBirdsFed++;
+            playSoundB(quickChirp_data, quickChirp_length, 0);
     } else if (collision(mamaBird.col, mamaBird.row, mamaBird.width-4, mamaBird.height - 4,
         231, 76, 15, 5) && collectedWorm > 0 && cardinalsFed <= 3 && birdsFed >= 3) {
             collectedWorm--;
             babyCardnial[cardinalsFed].isFed = 1;
             birdsFed++;
             cardinalsFed++;
+            playSoundB(quickChirp_data, quickChirp_length, 0);
         }
 
     //dropping yarn on cat
@@ -409,10 +419,12 @@ void updateFallingObjects() {
             if (collision(cat.col, cat.row, cat.width, cat.height, 
                 fallingObj[i].col, fallingObj[i].row, fallingObj[i].width, fallingObj[i].height)) {
                     if (fallingObj[i].flag == 1) {
-                        distractionTime = 120;
+                        catDistractionTime = 120;
+                        playSoundB(meowSound_data, meowSound_length, 0);
                         updateCat();
                     } else {
-                        distractionTime = 200;
+                        catDistractionTime = 200;
+                        playSoundB(purr_data, purr_length, 0);
                         updateCat();
                     }
                     fallingObj[i].active = 0;
@@ -420,10 +432,12 @@ void updateFallingObjects() {
             else if (collision(cat2.col, cat2.row, cat2.width, cat2.height,
                 fallingObj[i].col, fallingObj[i].row, fallingObj[i].width, fallingObj[i].height)) {
                     if (fallingObj[i].flag == 1) {
-                        distractionTime = 120;
+                        cat2DistractionTime = 120;
+                        playSoundB(meowSound_data, meowSound_length, 0);
                         updateCat2();
                     } else {
-                        distractionTime = 200;
+                        cat2DistractionTime = 200;
+                        playSoundB(purr_data, purr_length, 0);
                         updateCat2();
                     }
                     fallingObj[i].active = 0;
@@ -465,16 +479,17 @@ void initCat() {
     cat.aniCounter = 0;
     cat.prevAniState = 0;
     cat.curFrame = 0;
-    cat.numFrames = 3;
-    distractionTime = 0;
+    cat.numFrames = 4;
+    catDistractionTime = 0;
     cat.aniState = BCLEFT;
 }
 
 //Handle every-frame action of the cat
 void updateCat() {
-    
-    if (distractionTime > 0) {
-        distractionTime--;
+
+    if (catDistractionTime > 0) {
+        catDistractionTime--;
+        cat.aniCounter = 0;
     } else {
         //move cat
         cat.col += cat.cdel;
@@ -483,7 +498,7 @@ void updateCat() {
             cat.cdel = 1;
         }
 
-        if (cat.col == CATBOUNDRIGHT) {//left
+        if (cat.col == CATBOUNDRIGHT) { //left
             cat.aniState = BCLEFT;
             cat.cdel = -1;
         }
@@ -514,14 +529,15 @@ void initCat2() {
     cat2.aniCounter = 0;
     cat2.prevAniState = 0;
     cat2.curFrame = 0;
-    cat2.numFrames = 3;
-    distractionTime = 0;
+    cat2.numFrames = 4;
+    cat2DistractionTime = 0;
     cat2.aniState = YCLEFT;
 }
 
 void updateCat2() {
-    if (distractionTime > 0) {
-        distractionTime--;
+    if (cat2DistractionTime > 0) {
+        cat2DistractionTime--;
+        cat2.aniCounter = 0;
     } else {
         //move cat
         cat2.col += cat2.cdel;
@@ -547,7 +563,7 @@ void updateCat2() {
 void drawCat2() {
     shadowOAM[19].attr0 = (ROWMASK & (cat2.row - vOff)) | ATTR0_WIDE | ATTR0_REGULAR;
     shadowOAM[19].attr1 = (COLMASK & (cat2.col - hOff)) | ATTR1_MEDIUM;
-    shadowOAM[19].attr2 = ATTR2_PALROW(0) | ATTR2_TILEID(cat2.aniState * 3, 14 + cat2.curFrame * 2);
+    shadowOAM[19].attr2 = ATTR2_PALROW(0) | ATTR2_TILEID(cat2.aniState * 3, 16 + cat2.curFrame * 2);
 }
 
 //Initialize the fish

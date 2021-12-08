@@ -3,13 +3,13 @@
 
 //======================================================================
 //
-//	start, 256x256@4, 
+//	start, 256x256@8, 
 //	+ palette 256 entries, not compressed
-//	+ 75 tiles (t|f|p reduced) not compressed
+//	+ 1024 tiles not compressed
 //	+ regular map (in SBBs), not compressed, 32x32 
-//	Total size: 512 + 2400 + 2048 = 4960
+//	Total size: 512 + 65536 + 2048 = 68096
 //
-//	Time-stamp: 2021-11-09, 17:42:52
+//	Time-stamp: 2021-12-07, 23:11:28
 //	Exported by Cearn's GBA Image Transmogrifier, v0.8.3
 //	( http://www.coranac.com/projects/#grit )
 //
@@ -18,8 +18,8 @@
 #ifndef GRIT_START_H
 #define GRIT_START_H
 
-#define startTilesLen 2400
-extern const unsigned short startTiles[1200];
+#define startTilesLen 65536
+extern const unsigned short startTiles[32768];
 
 #define startMapLen 2048
 extern const unsigned short startMap[1024];
