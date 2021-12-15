@@ -47,6 +47,7 @@ int collectedWorm = 0;
 int catDistractionTime = 0;
 int cat2DistractionTime = 0;
 int babyCollide;
+int loseScreen;
 int randCol;
 int wormDisplay;
 int randRow;
@@ -277,12 +278,13 @@ void updatePlayer() {
     animateMamaBird();
 
     if (collision(mamaBird.col, mamaBird.row, mamaBird.width - 4, mamaBird.height - 4, 
-        cat.col, cat.row, cat.width, cat.height) || collision(mamaBird.col, mamaBird.row, 
-        mamaBird.width - 4, mamaBird.height - 4, cat2.col, cat2.row, cat2.width, cat2.height) && level == 3) {
+        cat.col, cat.row, cat.width, cat.height)) {
             mamaBirdLife = 0;
+            loseScreen = 0;
     } else if (collision(mamaBird.col, mamaBird.row, mamaBird.width - 4, mamaBird.height - 4, 
-        cat.col, cat.row, cat.width, cat.height) && level < 3) {
+        cat2.col, cat2.row, cat2.width, cat2.height)) {
             mamaBirdLife = 0;
+            loseScreen = 1;
         }
 
     //doesn't allow player to spam click to gain yarn
@@ -470,8 +472,8 @@ void drawFallingObjects() {
 
 //Initialize the cat
 void initCat() {
-    cat.row = 130;
-    cat.col = 95;
+    cat.row = 143;
+    cat.col = 247;
     cat.rdel = 0;
     cat.cdel = -1;
     cat.width = 23;
@@ -520,8 +522,8 @@ void drawCat() {
 }
 
 void initCat2() {
-    cat2.row = 143;
-    cat2.col = 247;
+    cat2.row = 130;
+    cat2.col = 95;
     cat2.rdel = 0;
     cat2.cdel = -1;
     cat2.width = 24;

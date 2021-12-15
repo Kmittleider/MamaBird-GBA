@@ -11,6 +11,7 @@ extern int vOff;
 extern ANISPRITE mamaBird;
 extern int mamaBirdLife;
 extern int birdsFed;
+extern int loseScreen;
 
 //Prototypes
 void initGame();
@@ -61,6 +62,7 @@ void drawCat2();
 void updateCat2();
 void initLevel3();
 void drawLevel3();
+void updateLevel3();
 
 
 //struct for first cat

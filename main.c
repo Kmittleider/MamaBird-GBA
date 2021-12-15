@@ -15,6 +15,7 @@ Again, game mechanics/how to play can be found in the instructions. */
 #include "pause.h"
 #include "win.h"
 #include "lose.h"
+#include "lose2.h"
 #include "background.h"
 #include "level2Background.h"
 #include "instructions.h"
@@ -27,6 +28,8 @@ Again, game mechanics/how to play can be found in the instructions. */
 #include "defeat.h"
 #include "angryCat.h"
 #include "clouds.h"
+#include "level2Transition.h"
+#include "level3Transition.h"
 
 // Prototypes
 void initialize();
@@ -42,12 +45,18 @@ void goToPause();
 void pause();
 void goToLevel2();
 void level2();
+void goToLevel2Transition();
+void level2Transition();
 void goToLevel3();
 void level3();
+void goToLevel3Transition();
+void level3Transition();
 void goToWin();
 void win();
 void goToLose();
 void lose();
+void goToLose2();
+void lose2();
 
 // States
 enum
@@ -56,10 +65,13 @@ enum
     INSTRUCTIONS,
     GAME,
     LEVEL2,
+    LEVEL2TRANSITION,
     LEVEL3,
+    LEVEL3TRANSITION,
     PAUSE,
     WIN,
-    LOSE
+    LOSE,
+    LOSE2
 };
 int state;
 
@@ -99,8 +111,14 @@ int main()
         case LEVEL2:
             level2();
             break;
+        case LEVEL2TRANSITION:
+            level2Transition();
+            break;
         case LEVEL3:
             level3();
+            break;
+        case LEVEL3TRANSITION:
+            level3Transition();
             break;
         case PAUSE:
             pause();
@@ -110,6 +128,9 @@ int main()
             break;
         case LOSE:
             lose();
+            break;
+        case LOSE2:
+            lose2();
             break;
         }
     }
@@ -224,20 +245,43 @@ void game() {
         DMANow(3, shadowOAM, OAM, 128 * 4);
         
         stopSound();
-        playSoundA(gameSong_data, gameSong_length, 1);
-
-        initLevel2();
-        goToLevel2();
-    } else if (mamaBirdLife == 0) { //lose condition
+        goToLevel2Transition();
+    } else if (mamaBirdLife == 0 && loseScreen == 0) { //lose condition
         hideSprites();
         DMANow(3, shadowOAM,OAM, 128 * 4);
         pauseSound();
-        goToLose();
+        goToLose2();
     } else if (BUTTON_PRESSED(BUTTON_A)) {
         hideSprites();
         DMANow(3, shadowOAM, OAM, 128 * 4);
         pauseSound();
         goToInstructions();
+    }
+}
+
+void goToLevel2Transition() {
+    REG_BG1CNT |= BG_8BPP;
+    waitForVBlank();
+    DMANow(3, level2TransitionPal, PALETTE, 256);
+    DMANow(3, level2TransitionTiles, &CHARBLOCK[0], level2TransitionTilesLen / 2);
+    DMANow(3, level2TransitionMap, &SCREENBLOCK[30], level2TransitionMapLen / 2);
+    REG_BG1VOFF = 0;
+    REG_BG1HOFF = 0;
+
+    stopSound();
+    state = LEVEL2TRANSITION;
+}
+
+void level2Transition() {
+    if(BUTTON_PRESSED(BUTTON_START)) {
+        hideSprites();
+        DMANow(3, shadowOAM, OAM, 128 * 4);
+        
+        stopSound();
+        playSoundA(gameSong_data, gameSong_length, 1);
+
+        initLevel2();
+        goToLevel2();
     }
 }
 
@@ -274,20 +318,43 @@ void level2() {
         DMANow(3, shadowOAM,OAM, 128 * 4);
 
         stopSound();
-        playSoundA(gameSong_data, gameSong_length, 1);
-
-        initLevel3();
-        goToLevel3();
-    } else if (mamaBirdLife == 0) { //lose condition
+        goToLevel3Transition();
+    } else if (mamaBirdLife == 0 && loseScreen == 0) { //lose condition
         hideSprites();
         DMANow(3, shadowOAM,OAM, 128 * 4);
         pauseSound();
-        goToLose();
+        goToLose2();
     } else if (BUTTON_PRESSED(BUTTON_A)) {
         hideSprites();
         DMANow(3, shadowOAM,OAM, 128 * 4);
         pauseSound();
         goToInstructions();
+    }
+}
+
+void goToLevel3Transition() {
+    REG_BG1CNT |= BG_8BPP;
+    waitForVBlank();
+    DMANow(3, level3TransitionPal, PALETTE, 256);
+    DMANow(3, level3TransitionTiles, &CHARBLOCK[0], level3TransitionTilesLen / 2);
+    DMANow(3, level3TransitionMap, &SCREENBLOCK[30], level3TransitionMapLen / 2);
+    REG_BG1VOFF = 0;
+    REG_BG1HOFF = 0;
+
+    stopSound();
+    state = LEVEL3TRANSITION;
+}
+
+void level3Transition() {
+    if (BUTTON_PRESSED(BUTTON_START)) {
+        hideSprites();
+        DMANow(3, shadowOAM,OAM, 128 * 4);
+
+        stopSound();
+        playSoundA(gameSong_data, gameSong_length, 1);
+
+        initLevel3();
+        goToLevel3();
     }
 }
 
@@ -324,7 +391,12 @@ void level3() {
         DMANow(3, shadowOAM,OAM, 128 * 4);
         pauseSound();
         goToWin();
-    } else if (mamaBirdLife == 0) { //lose condition
+    } else if (mamaBirdLife == 0 && loseScreen == 0) { //lose condition
+        hideSprites();
+        DMANow(3, shadowOAM,OAM, 128 * 4);
+        pauseSound();
+        goToLose2();
+    } else if (mamaBirdLife == 0 && loseScreen == 1) { //lose condition
         hideSprites();
         DMANow(3, shadowOAM,OAM, 128 * 4);
         pauseSound();
@@ -403,7 +475,7 @@ void win() {
     }
 }
 
-// Sets up the lose state
+// Sets up the lose state (black cat)
 void goToLose() {
     REG_BG1CNT |= BG_8BPP;
     DMANow(3, losePal, PALETTE, 256);
@@ -420,6 +492,30 @@ void goToLose() {
 
 // Runs every frame of the lose state
 void lose() {
+    if (BUTTON_PRESSED(BUTTON_START)) {
+        hideSprites();
+        DMANow(3, shadowOAM, OAM, 128 * 4);
+        initialize();
+    }
+}
+
+//Second lose screen (orange cat)
+void goToLose2() {
+    REG_BG1CNT |= BG_8BPP;
+    DMANow(3, lose2Pal, PALETTE, 256);
+    DMANow(3, lose2Tiles, &CHARBLOCK[0], lose2TilesLen / 2);
+    DMANow(3, lose2Map, &SCREENBLOCK[30], lose2MapLen / 2);
+    REG_BG1VOFF = 0;
+    REG_BG1HOFF = 0;
+
+    stopSound();
+    playSoundA(defeat_data, defeat_length, 0);
+    playSoundB(angryCat_data, angryCat_length, 0);
+    state = LOSE2;
+}
+
+// Runs every frame of the lose state
+void lose2() {
     if (BUTTON_PRESSED(BUTTON_START)) {
         hideSprites();
         DMANow(3, shadowOAM, OAM, 128 * 4);
